@@ -58,8 +58,14 @@ class BscScanService
             throw new Exception("Transaction sender does not match registered wallet address.");
         }
 
-        // 3. Target
-        $adminWallet = env('ADMIN_WALLET_ADDRESS', 'master_wallet');
+        // 3. Contract Lock
+        $usdtContractAddress = '0x55d398326f99059fF775485246999027B3197955'; // Official BEP20 USDT
+        if (strtolower($txDetails['to']) !== strtolower($usdtContractAddress)) {
+            throw new Exception("Invalid token contract. Only official USDT is accepted.");
+        }
+
+        // 4. Target
+        $adminWallet = config('app.admin_wallet');
 
         // Handling BEP20 Token Transfers (e.g., USDT)
         // For token transfers, the 'to' address is the contract address.
@@ -79,13 +85,16 @@ class BscScanService
             throw new Exception("Transaction target does not match the Admin Master Wallet.");
         }
 
-        // 4. Amount Verification: Calculate USDT Amount from Hex (18 decimals usually)
+        // 5. Amount Verification: Calculate USDT Amount from Hex (18 decimals usually)
         $hexAmount = substr($inputData, 74, 64);
         $decimalAmount = hexdec($hexAmount) / 1e18;
 
-        // Use a small epsilon for floating point comparison issues
-        if (abs($decimalAmount - $expectedAmount) > 0.01) {
-            throw new Exception("Transaction amount ({$decimalAmount} USDT) does not match the expected deposit amount ({$expectedAmount} USDT).");
+        // Use rounding to 2 decimal places to prevent floating-point math errors
+        $roundedReceived = round($decimalAmount, 2);
+        $roundedExpected = round($expectedAmount, 2);
+
+        if ($roundedReceived !== $roundedExpected) {
+            throw new Exception("Transaction amount ({$roundedReceived} USDT) does not match the expected deposit amount ({$roundedExpected} USDT).");
         }
 
         return true;

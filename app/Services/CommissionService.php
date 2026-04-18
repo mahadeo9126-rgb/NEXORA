@@ -8,13 +8,13 @@ use Carbon\Carbon;
 class CommissionService
 {
     private $upgradePrices = [
-        1 => ['total' => 60, 'upline' => 50, 'credit' => 10],
-        2 => ['total' => 115, 'upline' => 100, 'credit' => 15],
-        3 => ['total' => 170, 'upline' => 150, 'credit' => 20],
-        4 => ['total' => 225, 'upline' => 200, 'credit' => 25],
-        5 => ['total' => 280, 'upline' => 250, 'credit' => 30],
-        6 => ['total' => 550, 'upline' => 500, 'credit' => 0, 'rv_pool' => 25, 'matching_pool' => 25],
-        7 => ['total' => 1200, 'upline' => 1000, 'credit' => 0, 'rv_pool' => 100, 'matching_pool' => 100],
+        1 => ['total' => 60, 'slice_amount' => 50, 'credit' => 10, 'ranks' => [1]],
+        2 => ['total' => 115, 'slice_amount' => 50, 'credit' => 15, 'ranks' => [2, 3]],
+        3 => ['total' => 170, 'slice_amount' => 50, 'credit' => 20, 'ranks' => [3, 4, 5]],
+        4 => ['total' => 225, 'slice_amount' => 50, 'credit' => 25, 'ranks' => [4, 5, 6, 7]],
+        5 => ['total' => 280, 'slice_amount' => 50, 'credit' => 30, 'ranks' => [5, 6, 7, 7, 7]],
+        6 => ['total' => 550, 'slice_amount' => 50, 'credit' => 0, 'ranks' => [6, 7, 7, 7, 7, 7, 7, 7, 7, 7], 'rv_pool' => 25, 'matching_pool' => 25],
+        7 => ['total' => 1200, 'slice_amount' => 100, 'credit' => 0, 'ranks' => [7, 7, 7, 7, 7, 7, 7, 7, 7, 7], 'rv_pool' => 100, 'matching_pool' => 100],
     ];
 
     public function processUpgrade(User $user, int $level)
@@ -34,26 +34,35 @@ class CommissionService
         $user->rub_rank = $level;
         $user->save();
 
-        // Upline Unit Payout
-        $upline = User::find($user->sponsor_id);
-        $paid = false;
+        // Upline Differential Step-Up Payout
+        $currentSearchNode = User::find($user->sponsor_id);
+        $sliceAmount = $priceInfo['slice_amount'];
+        $ranksSequence = $priceInfo['ranks'];
 
-        while ($upline) {
-            $isRestricted = $upline->last_subscription_at ? Carbon::now()->diffInDays($upline->last_subscription_at) > 30 : true;
+        $admin = User::where('is_admin', 1)->first();
 
-            if (!$isRestricted && $upline->rub_rank >= $level) {
-                $upline->withdrawable_balance += $priceInfo['upline'];
-                $upline->save();
-                $paid = true;
-                break; // Found qualified upline
+        foreach ($ranksSequence as $requiredRank) {
+            $paidSlice = false;
+
+            while ($currentSearchNode) {
+                $isRestricted = $currentSearchNode->last_subscription_at ? Carbon::now()->diffInDays($currentSearchNode->last_subscription_at) > 30 : true;
+
+                if (!$isRestricted && $currentSearchNode->rub_rank >= $requiredRank) {
+                    $currentSearchNode->withdrawable_balance += $sliceAmount;
+                    $currentSearchNode->save();
+                    $paidSlice = true;
+                    // Move the search node UP for the NEXT slice
+                    $currentSearchNode = User::find($currentSearchNode->sponsor_id);
+                    break;
+                }
+
+                // Keep searching UP for this current slice
+                $currentSearchNode = User::find($currentSearchNode->sponsor_id);
             }
-            $upline = User::find($upline->sponsor_id); // Compress
-        }
 
-        if (!$paid) {
-            $admin = User::where('is_admin', 1)->first();
-            if ($admin) {
-                $admin->withdrawable_balance += $priceInfo['upline'];
+            // If we reached the top and couldn't find a qualified leader for this slice, pay Admin
+            if (!$paidSlice && $admin) {
+                $admin->withdrawable_balance += $sliceAmount;
                 $admin->save();
             }
         }

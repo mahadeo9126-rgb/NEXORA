@@ -62,7 +62,7 @@ class User extends Authenticatable
 
     public function children()
     {
-        return $this->hasMany(User::class, 'parent_id');
+        return $this->hasMany(User::class, 'parent_id')->orderBy('position', 'asc');
     }
 
     public function referrals()

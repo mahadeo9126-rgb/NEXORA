@@ -20,12 +20,35 @@ class GenealogyController extends Controller
     // Drill down method
     public function drillDown(Request $request, $id)
     {
-        $user = User::with('children.children.children')->findOrFail($id);
+        $targetUser = User::with('children.children.children')->findOrFail($id);
 
-        // Ensure the current user has the right to view this subtree
-        // A simple check might just allow anyone to view anyone below them,
-        // but for this MVP, we will just return the view.
+        // Verify Downline Privacy
+        if (!$this->isDescendant($request->user(), $targetUser)) {
+            abort(403, 'Unauthorized access. You can only view your own downline.');
+        }
 
+        $user = $targetUser;
         return view('genealogy', compact('user'));
+    }
+
+    /**
+     * Check if the target user is within the authenticated user's downline tree.
+     */
+    private function isDescendant(User $authUser, User $targetUser): bool
+    {
+        if ($authUser->id === $targetUser->id) {
+            return true;
+        }
+
+        $currentSearchNode = $targetUser;
+
+        while ($currentSearchNode && $currentSearchNode->parent_id) {
+            if ($currentSearchNode->parent_id === $authUser->id) {
+                return true;
+            }
+            $currentSearchNode = User::find($currentSearchNode->parent_id);
+        }
+
+        return false;
     }
 }

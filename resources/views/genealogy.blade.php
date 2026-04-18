@@ -87,34 +87,8 @@
     <div class="tree">
         <ul>
             <li>
-                <a href="#">{{ $user->username }} (Root)</a>
-                @if($user->children->count())
-                    <ul>
-                        @foreach($user->children as $childL1)
-                            <li>
-                                <a href="/genealogy/{{ $childL1->id }}">{{ $childL1->username }} (L1)</a>
-                                @if($childL1->children->count())
-                                    <ul>
-                                        @foreach($childL1->children as $childL2)
-                                            <li>
-                                                <a href="/genealogy/{{ $childL2->id }}">{{ $childL2->username }} (L2)</a>
-                                                @if($childL2->children->count())
-                                                    <ul>
-                                                        @foreach($childL2->children as $childL3)
-                                                            <li>
-                                                                <a href="/genealogy/{{ $childL3->id }}">{{ $childL3->username }} (L3)</a>
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                @endif
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
+                <a href="/genealogy/{{ $user->id }}">{{ $user->username }} (Root)</a>
+                @include('partials.tree_node', ['user' => $user, 'level' => 1])
             </li>
         </ul>
     </div>

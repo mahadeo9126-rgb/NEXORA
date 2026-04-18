@@ -33,8 +33,8 @@ class AuthController extends Controller
         ]);
 
         try {
-            // Triple-Lock Security Gateway
-            $bsc->verifyDeposit($request->tx_hash, $request->wallet_address);
+            // Triple-Lock Security Gateway with Amount Verification (60 USDT)
+            $bsc->verifyDeposit($request->tx_hash, $request->wallet_address, 60.0);
 
             $sponsor = User::find($request->sponsor_id);
 

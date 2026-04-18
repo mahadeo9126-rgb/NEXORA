@@ -15,7 +15,7 @@ class FinancialController extends Controller
     public function upgrade(Request $request, BscScanService $bsc, CommissionService $commission)
     {
         $request->validate([
-            'level' => 'required|integer|min:2|max:7',
+            'level' => 'required|integer|min:1|max:7',
             'tx_hash' => 'required|string|unique:transactions'
         ]);
 
@@ -26,10 +26,10 @@ class FinancialController extends Controller
         }
 
         try {
-            $bsc->verifyDeposit($request->tx_hash, $user->wallet_address);
+            $prices = [1 => 60, 2 => 115, 3 => 170, 4 => 225, 5 => 280, 6 => 550, 7 => 1200];
+            $expectedAmount = (float) $prices[$request->level];
 
-            // Fetch correct amount based on level (simplified for controller)
-            $prices = [2 => 115, 3 => 170, 4 => 225, 5 => 280, 6 => 550, 7 => 1200];
+            $bsc->verifyDeposit($request->tx_hash, $user->wallet_address, $expectedAmount);
 
             Transaction::create([
                 'user_id' => $user->id,
@@ -57,7 +57,7 @@ class FinancialController extends Controller
         $user = $request->user();
 
         try {
-            $bsc->verifyDeposit($request->tx_hash, $user->wallet_address);
+            $bsc->verifyDeposit($request->tx_hash, $user->wallet_address, 39.0);
 
             Transaction::create([
                 'user_id' => $user->id,
@@ -79,6 +79,11 @@ class FinancialController extends Controller
     public function requestWithdrawal(Request $request)
     {
         $user = $request->user();
+
+        $isRestricted = $user->last_subscription_at ? Carbon::now()->diffInDays($user->last_subscription_at) > 30 : true;
+        if ($isRestricted) {
+            return back()->withErrors(['withdraw' => 'You must renew your $39 subscription to enable withdrawals.']);
+        }
 
         if ($user->withdrawal_locked_until && Carbon::now()->isBefore($user->withdrawal_locked_until)) {
             return back()->withErrors(['withdraw' => 'Withdrawals are currently locked due to a recent wallet change.']);

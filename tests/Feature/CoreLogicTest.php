@@ -25,7 +25,12 @@ class CoreLogicTest extends TestCase
 
     public function test_commission_upgrade_payout()
     {
-        $sponsor = User::factory()->create(['username' => 'sponsor', 'rub_rank' => 3, 'withdrawable_balance' => 0]);
+        $sponsor = User::factory()->create([
+            'username' => 'sponsor',
+            'rub_rank' => 3,
+            'withdrawable_balance' => 0,
+            'last_subscription_at' => now(), // Add subscription so not restricted
+        ]);
         $user = User::factory()->create(['username' => 'user', 'sponsor_id' => $sponsor->id, 'rub_rank' => 2]);
 
         $service = new CommissionService();

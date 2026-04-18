@@ -19,6 +19,10 @@ class CommissionService
 
     public function processUpgrade(User $user, int $level)
     {
+        if ($user->rub_rank !== ($level - 1)) {
+            throw new \Exception("Upgrades must be sequential.");
+        }
+
         if (!isset($this->upgradePrices[$level])) return;
 
         $priceInfo = $this->upgradePrices[$level];
@@ -30,15 +34,26 @@ class CommissionService
 
         // Upline Unit Payout
         $upline = User::find($user->sponsor_id);
+        $paid = false;
+
         while ($upline) {
-            $isRestricted = Carbon::now()->diffInDays($upline->last_subscription_at) > 30;
+            $isRestricted = $upline->last_subscription_at ? Carbon::now()->diffInDays($upline->last_subscription_at) > 30 : true;
 
             if (!$isRestricted && $upline->rub_rank >= $level) {
                 $upline->withdrawable_balance += $priceInfo['upline'];
                 $upline->save();
+                $paid = true;
                 break; // Found qualified upline
             }
             $upline = User::find($upline->sponsor_id); // Compress
+        }
+
+        if (!$paid) {
+            $admin = User::where('is_admin', 1)->first();
+            if ($admin) {
+                $admin->withdrawable_balance += $priceInfo['upline'];
+                $admin->save();
+            }
         }
     }
 

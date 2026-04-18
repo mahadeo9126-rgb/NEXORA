@@ -62,3 +62,4 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+\n# NEXORA Environment Setup\n\nTo configure your environment variables (like Database, SMTP, and BscScan API Keys), you must rename the `.env.example` file to `.env`.\n\n```bash\ncp .env.example .env\n```\n\nThe `.env` file contains sensitive secrets and is deliberately excluded from version control via `.gitignore` for security purposes. Always edit your local `.env` file to configure your platform.

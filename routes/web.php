@@ -1,0 +1,43 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinancialController;
+use App\Http\Controllers\GenealogyController;
+use App\Http\Controllers\AdminController;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+// Auth
+Route::get('/register', [AuthController::class, 'showRegisterForm']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
+
+// User Authenticated Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // Genealogy
+    Route::get('/genealogy', [GenealogyController::class, 'index']);
+    Route::get('/genealogy/{id}', [GenealogyController::class, 'drillDown']);
+
+    // Financials
+    Route::post('/upgrade', [FinancialController::class, 'upgrade']);
+    Route::post('/subscribe', [FinancialController::class, 'subscribe']);
+    Route::post('/wallet/update', [FinancialController::class, 'updateWallet']);
+    Route::post('/withdraw/request', [FinancialController::class, 'requestWithdrawal']);
+    Route::post('/withdraw/verify', [FinancialController::class, 'verifyWithdrawal']);
+
+    // Admin Routes
+    Route::middleware('admin')->prefix('admin')->group(function () {
+        Route::get('/dashboard', function() {
+            return view('admin.dashboard');
+        });
+        Route::post('/sync', [AdminController::class, 'sync']);
+    });
+});

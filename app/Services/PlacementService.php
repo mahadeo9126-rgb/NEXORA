@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Exception;
 
 class PlacementService
 {
@@ -12,13 +13,14 @@ class PlacementService
      * @param User $sponsor
      * @param string $pref 'extreme_left', 'extreme_right', 'left', 'right'
      * @return array ['parent_id' => int, 'position' => string]
+     * @throws Exception
      */
     public function findPlacement(User $sponsor, string $pref): array
     {
         if ($pref === 'extreme_left') {
-            return $this->findExtreme($sponsor, 'left');
+            return $this->findExtreme($sponsor, 'left', 1);
         } elseif ($pref === 'extreme_right') {
-            return $this->findExtreme($sponsor, 'right');
+            return $this->findExtreme($sponsor, 'right', 1);
         } elseif ($pref === 'left') {
             return $this->findBalanced($sponsor, 'left');
         } elseif ($pref === 'right') {
@@ -26,18 +28,22 @@ class PlacementService
         }
 
         // Default fallback
-        return $this->findExtreme($sponsor, 'left');
+        return $this->findExtreme($sponsor, 'left', 1);
     }
 
-    private function findExtreme(User $node, string $direction): array
+    private function findExtreme(User $node, string $direction, int $depth): array
     {
+        if ($depth > 20) {
+            throw new Exception("Matrix depth limit of 20 reached");
+        }
+
         $child = User::where('parent_id', $node->id)->where('position', $direction)->first();
 
         if (!$child) {
             return ['parent_id' => $node->id, 'position' => $direction];
         }
 
-        return $this->findExtreme($child, $direction);
+        return $this->findExtreme($child, $direction, $depth + 1);
     }
 
     private function findBalanced(User $sponsor, string $direction): array
@@ -50,28 +56,38 @@ class PlacementService
             return ['parent_id' => $sponsor->id, 'position' => $direction];
         }
 
-        // BFS Queue
-        $queue = [$rootChild];
+        // BFS Queue - stores elements as array ['user' => User, 'depth' => int]
+        // Since $rootChild is on level 1, depth starts at 1
+        $queue = [['user' => $rootChild, 'depth' => 1]];
 
         while (!empty($queue)) {
-            $current = array_shift($queue);
+            $item = array_shift($queue);
+            $current = $item['user'];
+            $depth = $item['depth'];
+
+            if ($depth >= 20) {
+                // If the children of this node would be at depth 21, skip them,
+                // but we should probably throw an error if the entire tree is full up to 20.
+                continue;
+            }
+
+            // Fetch BOTH children in a single query to prevent N+1 queries
+            $children = User::where('parent_id', $current->id)->get()->keyBy('position');
 
             // Check Left
-            $leftChild = User::where('parent_id', $current->id)->where('position', 'left')->first();
-            if (!$leftChild) {
+            if (!$children->has('left')) {
                 return ['parent_id' => $current->id, 'position' => 'left'];
             }
-            array_push($queue, $leftChild);
+            array_push($queue, ['user' => $children->get('left'), 'depth' => $depth + 1]);
 
             // Check Right
-            $rightChild = User::where('parent_id', $current->id)->where('position', 'right')->first();
-            if (!$rightChild) {
+            if (!$children->has('right')) {
                 return ['parent_id' => $current->id, 'position' => 'right'];
             }
-            array_push($queue, $rightChild);
+            array_push($queue, ['user' => $children->get('right'), 'depth' => $depth + 1]);
         }
 
-        // Fallback (Should theoretically not be reached if tree is unbound)
-        return ['parent_id' => $sponsor->id, 'position' => $direction];
+        // If the queue empties without finding a spot, the matrix is full
+        throw new Exception("Matrix depth limit of 20 reached");
     }
 }

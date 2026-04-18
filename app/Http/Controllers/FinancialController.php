@@ -29,7 +29,7 @@ class FinancialController extends Controller
             $bsc->verifyDeposit($request->tx_hash, $user->wallet_address);
 
             // Fetch correct amount based on level (simplified for controller)
-            $prices = [2 => 115, 3 => 170, 4 => 225, 5 => 280, 6 => 350, 7 => 450];
+            $prices = [2 => 115, 3 => 170, 4 => 225, 5 => 280, 6 => 550, 7 => 1200];
 
             Transaction::create([
                 'user_id' => $user->id,

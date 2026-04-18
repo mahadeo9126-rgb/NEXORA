@@ -51,7 +51,7 @@ class AuthController extends Controller
                 'position' => $placementData['position'],
                 'placement_pref' => $request->placement_pref,
             ]);
-            $user->rub_rank = 1;
+            $user->rub_rank = 0; // Set to 0 so the CommissionService sequential check (0 === 1 - 1) passes
             $user->last_subscription_at = now();
             $user->save();
 
@@ -66,7 +66,7 @@ class AuthController extends Controller
             // Process Initial Upgrade & Subscription automatically if included in $60?
             // Actually, instruction says Registration requires Deposit.
             // Payouts for RUB 1:
-            $commission->processUpgrade($user, 1);
+            $commission->processUpgrade($user, 1); // Upgrades user to rank 1 internally
 
             Auth::login($user);
 

@@ -13,8 +13,8 @@ class CommissionService
         3 => ['total' => 170, 'upline' => 150, 'credit' => 20],
         4 => ['total' => 225, 'upline' => 200, 'credit' => 25],
         5 => ['total' => 280, 'upline' => 250, 'credit' => 30],
-        6 => ['total' => 350, 'upline' => 320, 'credit' => 30],
-        7 => ['total' => 450, 'upline' => 400, 'credit' => 50],
+        6 => ['total' => 550, 'upline' => 500, 'credit' => 0, 'rv_pool' => 25, 'matching_pool' => 25],
+        7 => ['total' => 1200, 'upline' => 1000, 'credit' => 0, 'rv_pool' => 100, 'matching_pool' => 100],
     ];
 
     public function processUpgrade(User $user, int $level)
@@ -28,7 +28,9 @@ class CommissionService
         $priceInfo = $this->upgradePrices[$level];
 
         // Marketplace Credit
-        $user->shopping_credit += $priceInfo['credit'];
+        if (isset($priceInfo['credit']) && $priceInfo['credit'] > 0) {
+            $user->shopping_credit += $priceInfo['credit'];
+        }
         $user->rub_rank = $level;
         $user->save();
 
@@ -53,6 +55,41 @@ class CommissionService
             if ($admin) {
                 $admin->withdrawable_balance += $priceInfo['upline'];
                 $admin->save();
+            }
+        }
+
+        // Special RUB 6 and 7 Logic
+        if ($level === 6 || $level === 7) {
+            // 1. RV Pool Distribution
+            $rvTotal = $priceInfo['rv_pool'];
+            $rvPerLevel = $rvTotal / 20;
+
+            $parent = User::find($user->parent_id);
+            $levelCount = 1;
+            while ($parent && $levelCount <= 20) {
+                $isRestricted = $parent->last_subscription_at ? Carbon::now()->diffInDays($parent->last_subscription_at) > 30 : true;
+                if (!$isRestricted) {
+                    $parent->withdrawable_balance += $rvPerLevel;
+                    $parent->save();
+                    $levelCount++;
+                }
+                $parent = User::find($parent->parent_id);
+            }
+
+            // 2. Matching Pool Distribution (3 Generations)
+            $matchingTotal = $priceInfo['matching_pool'];
+            $percentages = [1 => 0.50, 2 => 0.30, 3 => 0.20];
+
+            $sponsor = User::find($user->sponsor_id);
+            $genCount = 1;
+
+            while ($sponsor && $genCount <= 3) {
+                $bonus = $matchingTotal * $percentages[$genCount];
+                $sponsor->withdrawable_balance += $bonus;
+                $sponsor->save();
+
+                $sponsor = User::find($sponsor->sponsor_id);
+                $genCount++;
             }
         }
     }

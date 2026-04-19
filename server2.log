@@ -1,0 +1,5 @@
+PHP Warning:  require(/app/vendor/autoload.php): Failed to open stream: No such file or directory in /app/artisan on line 18
+PHP Fatal error:  Uncaught Error: Failed opening required '/app/vendor/autoload.php' (include_path='.:/usr/share/php') in /app/artisan:18
+Stack trace:
+#0 {main}
+  thrown in /app/artisan on line 18

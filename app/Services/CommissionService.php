@@ -61,9 +61,12 @@ class CommissionService
             }
 
             // If we reached the top and couldn't find a qualified leader for this slice, pay Admin
-            if (!$paidSlice && $admin) {
-                $admin->withdrawable_balance += $sliceAmount;
-                $admin->save();
+            if (!$paidSlice) {
+                $adminToPay = User::where('is_admin', 1)->first();
+                if ($adminToPay) {
+                    $adminToPay->withdrawable_balance += $sliceAmount;
+                    $adminToPay->save();
+                }
             }
         }
 

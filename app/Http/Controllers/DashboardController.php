@@ -12,14 +12,30 @@ class DashboardController extends Controller
 
         $referralLink = url('/register?ref=' . $user->id);
 
-        // Income Predictor: Example logic based on matrix size and rank
-        $directs = $user->referrals()->count();
-        $matrixSize = $user->children()->count(); // Simplified for 1st level, real implementation might count descendants
-        $incomePredictor = ($matrixSize * 1.40) + ($directs * 5);
+        // Fetch recent transactions
+        $recentTransactions = \App\Models\Transaction::where('user_id', $user->id)
+                                ->orderBy('created_at', 'desc')
+                                ->take(5)
+                                ->get();
+
+        // Count descendants properly without N+1 problem
+        $matrixSize = 0;
+        $allDescendants = \App\Models\User::select('id', 'parent_id')->get()->groupBy('parent_id')->toArray();
+        $queue = [$user->id];
+
+        while(!empty($queue)) {
+            $currentId = array_shift($queue);
+            if (isset($allDescendants[$currentId])) {
+                foreach ($allDescendants[$currentId] as $child) {
+                    $matrixSize++;
+                    array_push($queue, $child['id']);
+                }
+            }
+        }
 
         // Foundation Fund (Mock global counter)
         $foundationFund = 15000.50;
 
-        return view('dashboard', compact('user', 'referralLink', 'incomePredictor', 'foundationFund'));
+        return view('dashboard', compact('user', 'referralLink', 'matrixSize', 'foundationFund', 'recentTransactions'));
     }
 }

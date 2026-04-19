@@ -35,9 +35,10 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes
     Route::middleware('admin')->prefix('admin')->group(function () {
-        Route::get('/dashboard', function() {
-            return view('admin.dashboard');
-        });
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
         Route::post('/sync', [AdminController::class, 'sync']);
+        Route::get('/withdrawals', [AdminController::class, 'pendingWithdrawals']);
+        Route::post('/withdrawals/{id}/approve', [AdminController::class, 'approveWithdrawal']);
+        Route::post('/withdrawals/{id}/reject', [AdminController::class, 'rejectWithdrawal']);
     });
 });

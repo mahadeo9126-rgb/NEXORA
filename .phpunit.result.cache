@@ -1,0 +1,1 @@
+{"version":1,"defects":{"Tests\\Feature\\CoreLogicTest::test_commission_upgrade_payout":3},"times":{"Tests\\Unit\\ExampleTest::test_example":0.012,"Tests\\Feature\\CoreLogicTest::test_placement_extreme_left":0.35,"Tests\\Feature\\CoreLogicTest::test_commission_upgrade_payout":0.028,"Tests\\Feature\\ExampleTest::test_example":0.08}}

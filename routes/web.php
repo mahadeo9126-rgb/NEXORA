@@ -10,12 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 
 // Database Setup for Shared Hosting
-// Added simple key protection to prevent unauthorized access
-Route::get('/setup-database', function (Request $request) {
-    if ($request->query('key') !== env('SETUP_KEY', 'default-secret-key-change-me')) {
-        abort(403, 'Unauthorized setup access.');
-    }
-
+Route::get('/setup-database', function () {
     try {
         Artisan::call('migrate', ['--force' => true]);
         return 'Database migration completed successfully.';

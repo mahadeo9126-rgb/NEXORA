@@ -61,7 +61,7 @@
         <h3 class="text-gray-800 font-bold mb-4">Your Referral Link</h3>
         <div class="flex">
             <input type="text" readonly value="{{ $referralLink }}" class="flex-1 bg-gray-50 border border-gray-200 rounded-l-xl px-4 py-3 text-gray-600 focus:outline-none">
-            <button onclick="navigator.clipboard.writeText('{{ $referralLink }}'); alert('Copied!')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-r-xl font-medium transition duration-200">Copy</button>
+            <button onclick="navigator.clipboard.writeText('{{ $referralLink }}'); showToast('Referral link copied to clipboard!')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-r-xl font-medium transition duration-200">Copy</button>
         </div>
     </div>
 

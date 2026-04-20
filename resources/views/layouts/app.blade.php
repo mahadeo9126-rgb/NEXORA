@@ -18,8 +18,11 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden">
 
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden md:hidden transition-opacity" onclick="toggleMobileMenu()"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-gray-900 text-white flex flex-col justify-between hidden md:flex">
+    <aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col justify-between fixed md:relative z-30 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
         <div>
             <!-- Logo -->
             <div class="h-20 flex items-center justify-center border-b border-gray-800">
@@ -70,9 +73,17 @@
     <div class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Top Navbar -->
-        <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10">
-            <div class="text-2xl font-bold text-gray-800">
-                @yield('header_title', 'Overview')
+        <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shadow-sm z-10">
+            <div class="flex items-center">
+                <!-- Hamburger Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden mr-4 text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div class="text-xl md:text-2xl font-bold text-gray-800">
+                    @yield('header_title', 'Overview')
+                </div>
             </div>
 
             <div class="flex items-center space-x-6">
@@ -108,5 +119,42 @@
         </main>
     </div>
 
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+
+            const toast = document.createElement('div');
+            toast.className = 'bg-gray-800 text-white px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-3';
+
+            toast.innerHTML = `
+                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <span class="font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

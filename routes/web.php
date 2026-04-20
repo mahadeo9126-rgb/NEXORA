@@ -1,44 +1,28 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Models\User;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-
-Route::get('/test-login', function () {
-    $user = User::firstOrCreate(
-        ['email' => 'test@example.com'],
-        [
-            'username' => 'TestLeader',
-            'password' => bcrypt('password'),
-            'sponsor_id' => null,
-            'parent_id' => null,
-            'position' => 'left',
-            'placement_pref' => 'left',
-            'wallet_address' => '0x' . Str::random(40),
-            'withdrawable_balance' => 1250.50,
-            'shopping_credit' => 45.00,
-            'last_subscription_at' => now(),
-        ]
-    );
-    $user->rub_rank = 3;
-    $user->save();
-
-    Transaction::firstOrCreate(['user_id' => $user->id, 'tx_hash' => '0xabcd1234', 'type' => 'upgrade', 'amount' => 170, 'status' => 'completed']);
-    Transaction::firstOrCreate(['user_id' => $user->id, 'tx_hash' => 'WD_xyz987', 'type' => 'withdrawal', 'amount' => 100, 'status' => 'pending']);
-
-    Auth::login($user);
-    return redirect('/dashboard');
-});
-<?php
-
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinancialController;
 use App\Http\Controllers\GenealogyController;
 use App\Http\Controllers\AdminController;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Http\Request;
+
+// Database Setup for Shared Hosting
+// Added simple key protection to prevent unauthorized access
+Route::get('/setup-database', function (Request $request) {
+    if ($request->query('key') !== env('SETUP_KEY', 'default-secret-key-change-me')) {
+        abort(403, 'Unauthorized setup access.');
+    }
+
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        return 'Database migration completed successfully.';
+    } catch (\Exception $e) {
+        return 'Error during migration: ' . $e->getMessage();
+    }
+});
 
 Route::get('/', function () {
     return view('welcome');

@@ -29,7 +29,7 @@
             </div>
         @endif
 
-        <form method="POST" action="/register" class="space-y-6">
+        <form method="POST" action="{{ url('/register') }}" class="space-y-6">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -103,7 +103,7 @@
 
         <p class="mt-8 text-center text-sm text-gray-600">
             Already have an account?
-            <a href="/login" class="font-bold text-indigo-600 hover:text-indigo-500 transition duration-200">Log in here</a>
+            <a href="{{ url('/login') }}" class="font-bold text-indigo-600 hover:text-indigo-500 transition duration-200">Log in here</a>
         </p>
 
     </div>
